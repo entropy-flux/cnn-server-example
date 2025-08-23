@@ -1,3 +1,4 @@
+from os import makedirs
 from mltracker.ports import Models
 from torch import save
 from torchsystem import Depends
@@ -28,5 +29,8 @@ def handle_results(event: Trained | Evaluated, models: Models = Depends(models))
     for name, metric in event.results.items():
         model.metrics.add(name, metric.item(), event.model.epoch, event.model.phase) 
  
+@consumer.handler
 def persist_model(event: Trained):
-    save(event.model.nn.state_dict(), f"./data/weights/{event.model.name}-{event.model.hash}.pth")
+    makedirs("data/weights", exist_ok=True)
+    save(event.model.nn.state_dict(), f"data/weights/{event.model.name}-{event.model.hash}.pth")
+    print("Saved model weights at: ", f"data/weights/{event.model.name}-{event.model.hash}.pth")

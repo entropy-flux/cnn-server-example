@@ -33,12 +33,19 @@ def bring_to_current_epoch(classifier: Classifier, models: Models = Depends(mode
 @compiler.step
 def restore_weights(classifier: Classifier): 
     if classifier.epoch != 0:    
-        print("Restoring model weights") 
-        makedirs(".data/weights", exist_ok=True)
-        classifier.nn.load_state_dict(load(f"./data/weights/{classifier.name}-{classifier.hash}.pth", weights_only=True))
+        print("Restoring model weights from: ", f"data/weights/{classifier.name}-{classifier.hash}.pth")   
+        classifier.nn.load_state_dict(load(f"data/weights/{classifier.name}-{classifier.hash}.pth", weights_only=True))
     return classifier
 
 @compiler.step
 def compile_model(classifier: Classifier):
     print("Compiling model...")
     return compile(classifier) 
+
+@compiler.step
+def compile_model(classifier: Classifier):
+    print("Compiled model with: ")
+    print("Name: ", classifier.name)
+    print("Hash: ", classifier.hash)
+    print("Epochs: ", classifier.epoch) 
+    return classifier
