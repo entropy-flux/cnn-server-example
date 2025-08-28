@@ -13,10 +13,13 @@ compiler = Compiler[Classifier](provider=provider)
   
 @compiler.step
 def build_model(nn: Module, criterion: Module, optimizer: Module, metrics: Metrics, device: str = Depends(device)):
-    print(f"Moving classifier to device {device}...")
-    metrics.accuracy.to(device)
-    metrics.loss.to(device)
-    return Classifier(nn, criterion, optimizer, metrics).to(device)
+    if device != 'cpu':
+        print(f"Moving classifier to device {device}...")
+        metrics.accuracy.to(device)
+        metrics.loss.to(device)
+        return Classifier(nn, criterion, optimizer, metrics).to(device)
+    else:
+        return Classifier(nn, criterion, optimizer, metrics)
 
 @compiler.step
 def bring_to_current_epoch(classifier: Classifier, models: Models = Depends(models)):
@@ -38,12 +41,15 @@ def restore_weights(classifier: Classifier):
     return classifier
 
 @compiler.step
-def compile_model(classifier: Classifier):
-    print("Compiling model...")
-    return compile(classifier) 
+def compile_model(classifier: Classifier, device: str = Depends(device)):
+    if device != 'cpu':
+        print("Compiling model...")
+        return compile(classifier) 
+    else:
+        return classifier
 
 @compiler.step
-def compile_model(classifier: Classifier):
+def debug_model(classifier: Classifier):
     print("Compiled model with: ")
     print("Name: ", classifier.name)
     print("Hash: ", classifier.hash)

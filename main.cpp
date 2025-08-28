@@ -7,35 +7,17 @@
 #include <tannic/serialization.hpp>
 #include <tannic-nn.hpp> 
 #include <tannic-nn/functional.hpp> 
+#include <tannic-nn/convolutional.hpp>
 #include "server.hpp" 
+#include "models/cnn.hpp"
 
-using namespace tannic;  
-
-struct MLP : nn::Module {
-    nn::Linear input_layer; 
-    nn::Linear output_layer;
-
-    constexpr MLP(type dtype, size_t input_features, size_t hidden_features, size_t output_features) 
-    :   input_layer(dtype, input_features, hidden_features) 
-    ,   output_layer(dtype, hidden_features, output_features)
-    {}
-
-    void initialize(nn::Parameters& parameters) const {
-        input_layer.initialize("input_layer", parameters); 
-        output_layer.initialize("output_layer", parameters);
-    }
-
-    Tensor forward(Tensor features) const {  
-        features = nn::relu(input_layer(features));  
-        return output_layer(features); 
-    }
-};
-
-constexpr MLP model(float32, 784, 512, 10);
+using namespace tannic;    
+ 
+constexpr CNN model(float32, 1, 32, 10);
 
 int main() {  
-    nn::Parameters parameters; 
-    parameters.initialize("./data/tannic/MLP");
+    nn::Parameters parameters;  
+    parameters.initialize("../data/tannic/CNN");
     model.initialize(parameters);
 
     Server server(8080);
@@ -47,7 +29,7 @@ int main() {
                 Header header{};
                 if (!server.read(socket, &header, sizeof(Header))) {
                     std::cout << "Client disconnected.\n";
-                    break; // clean exit instead of throwing
+                    break; 
                 }
 
                 if (header.magic != MAGIC) {

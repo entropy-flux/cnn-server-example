@@ -26,7 +26,7 @@ if __name__ == "__main__":
     from pytannic.torch.tensors import serialize, deserialize
 
     transform = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))])
-    mnist = MNIST(root="./data", train=False, download=True, transform=transform)
+    mnist = MNIST(root="./data/mnist", train=False, download=True, transform=transform)
     loader = DataLoader(dataset=mnist, batch_size=256)
     metrics = Metrics(device="cpu")
      

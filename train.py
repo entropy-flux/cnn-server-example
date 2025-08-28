@@ -7,8 +7,7 @@ from torch.nn import Conv2d, Flatten
 from torchsystem.registry import register
 from torchvision.datasets.mnist import MNIST
 from torchvision.transforms import Compose, ToTensor, Normalize  
-
-
+ 
 class Digits:
     def __init__(self, train: bool, normalize: bool):
         self.transform = Compose([ToTensor(), Normalize((0.1307,), (0.3081,))]) if normalize else ToTensor()
@@ -18,22 +17,7 @@ class Digits:
         return self.transform(self.data[index][0]), self.data[index][1]
     
     def __len__(self):
-        return len(self.data)
-
-
-class MLP(Module):
-    def __init__(self, input_size: int, hidden_size: int, output_size: int, bias: bool, p: float):
-        super().__init__()
-        self.input_layer = Linear(input_size, hidden_size, bias=bias)
-        self.dropout = Dropout(p)
-        self.activation = ReLU()
-        self.output_layer = Linear(hidden_size, output_size, bias=bias)
-
-    def forward(self, features: Tensor) -> Tensor:
-        features = self.input_layer(features)
-        features = self.dropout(features)
-        features = self.activation(features)
-        return self.output_layer(features) 
+        return len(self.data) 
     
 
 class CNN(Module):
@@ -55,6 +39,7 @@ class CNN(Module):
 
 
 if __name__ == '__main__': 
+    from torch import cuda
     from torch.nn import CrossEntropyLoss
     from torch.nn import Dropout
     from torch.optim import Adam
@@ -70,16 +55,13 @@ if __name__ == '__main__':
 
     register(Adam, excluded_args=[0], excluded_kwargs={'params'})
     register(CrossEntropyLoss)
-    register(Digits)
-    register(DataLoader)
-#    register(MLP)
+    register(Digits) 
     register(CNN) 
 
-    training.provider.override(training.device, lambda: 'cuda') 
+    training.provider.override(training.device, lambda: 'cuda' if cuda.is_available() else 'cpu') 
     training.provider.override(training.models, lambda: getallmodels("MNIST-Digits", backend="tinydb")  )
     training.producer.register(persistence.consumer)
-
-#    nn = MLP(784, 512, 10, bias=True, p=0.4)
+ 
     nn = CNN(1, 32, 10, bias=True, p=0.2)  
     criterion = CrossEntropyLoss()
     optimizer = Adam(nn.parameters(), lr=0.001)
@@ -90,10 +72,14 @@ if __name__ == '__main__':
         'evaluation': Digits(train=False,  normalize=True),
     }
 
+
     loaders = {
         'train': DataLoader(datasets['train'], batch_size=256, shuffle=True, pin_memory=True, pin_memory_device='cuda:0', num_workers=4),
         'evaluation': DataLoader(datasets['evaluation'], batch_size=256, shuffle=False, pin_memory=True, pin_memory_device='cuda:0', num_workers=4) 
-    } 
+    } if cuda.is_available() else {
+        'train': DataLoader(datasets['train'], batch_size=256, shuffle=True),
+        'evaluation': DataLoader(datasets['evaluation'], batch_size=256, shuffle=False) 
+    }
 
     for epoch in range(15):
         training.train(classifier, loaders['train'])
