@@ -60,7 +60,7 @@ int main() {
                 }
 
                 Tensor input(dtypeof(metadata.dcode), shape, 0, buffer);  
-                Tensor output = argmax(model(input)); 
+                Tensor output = argmax(model(input), -1); 
 
                 header = headerof(output);
                 metadata = metadataof(output);
